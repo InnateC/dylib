@@ -1,4 +1,4 @@
-name: CI
+name: CI Cross-platform
 
 on:
   workflow_dispatch:
@@ -108,18 +108,44 @@ jobs:
             conan_profile: android-64
             conan_options: --conf tools.android:ndk_path=$ANDROID_NDK_ROOT
             artifact_platform: arm64-v8a
-
-    name: ${{ matrix.os }} (C++${{ matrix.cxx-std }} - ${{ matrix.generator }})
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Generate project files
-        run: cmake . -B build -G "${{ matrix.generator }}" -DCMAKE_CXX_STANDARD=${{ matrix.cxx-std }} -DDYLIB_BUILD_TESTS=ON -DDYLIB_WARNING_AS_ERRORS=ON
+      - uses: actions/setup-python@v5
+        if: "${{ matrix.conan_profile != '' }}"
+        with:
+          python-version: '3.10'
 
-      - name: Build dynamic library and unit tests
-        run: cmake --build build
+      - name: Conan setup
+        if: "${{ matrix.conan_profile != '' }}"
+        run: |
+          pip3 install 'conan<2.0'
+          conan profile new default --detect
+          conan install . \
+            --install-folder=conan-generated \
+            --no-imports \
+            --build=never \
+            --profile:build=default \
+            --profile:host=CI/conan/${{ matrix.conan_profile }} \
+            ${{ matrix.conan_options }}
+        env:
+          GENERATE_ONLY_BUILT_CONFIG: 1
+      
+      - name: Build
+      run: |
+        cmake --build --preset ${{matrix.preset}}
+
+      - name: Test
+      run: |
+        ctest --preset ${{matrix.preset}}
+
+      # - name: Generate project files
+      #   run: cmake . -B build -G "${{ matrix.generator }}" -DCMAKE_CXX_STANDARD=${{ matrix.cxx-std }} -DDYLIB_BUILD_TESTS=ON -DDYLIB_WARNING_AS_ERRORS=ON
+
+      # - name: Build dynamic library and unit tests
+      #   run: cmake --build build
 
       - name: Run unit tests
         working-directory: build
