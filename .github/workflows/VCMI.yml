@@ -83,6 +83,7 @@ jobs:
             extension: exe
             preset: windows-msvc-release-ccache
           - platform: mingw
+            generator: MinGW Makefiles
             os: ubuntu-22.04
             test: 0
             pack: 1
@@ -93,6 +94,7 @@ jobs:
             preset: windows-mingw-conan-linux
             conan_profile: mingw64-linux.jinja
           - platform: mingw-32
+            generator: MinGW Makefiles
             os: ubuntu-22.04
             test: 0
             pack: 1
@@ -103,6 +105,7 @@ jobs:
             preset: windows-mingw-conan-linux
             conan_profile: mingw32-linux.jinja
           - platform: android-32
+            generator: Unix Makefiles
             os: ubuntu-22.04
             extension: apk
             preset: android-conan-ninja-release
@@ -110,6 +113,7 @@ jobs:
             conan_options: --conf tools.android:ndk_path=$ANDROID_NDK_ROOT
             artifact_platform: armeabi-v7a
           - platform: android-64
+            generator: Unix Makefiles
             os: ubuntu-22.04
             extension: apk
             preset: android-conan-ninja-release
