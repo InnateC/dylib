@@ -28,17 +28,21 @@ jobs:
       matrix:
         include:
           - platform: linux-qt6
+            generator: Unix Makefiles
             os: ubuntu-22.04
             test: 0
             preset: linux-clang-test
           - platform: linux
+            generator: Unix Makefiles
             os: ubuntu-22.04
             test: 1
             preset: linux-gcc-test
+            generator: Unix Makefiles
           - platform: linux
             os: ubuntu-20.04
             test: 0
             preset: linux-gcc-debug
+            generator: Unix Makefiles
           - platform: mac-intel
             os: macos-12
             test: 0
@@ -49,6 +53,7 @@ jobs:
             conan_profile: macos-intel
             conan_options: --options with_apple_system_libs=True
             artifact_platform: intel
+            generator: MinGW Makefiles
           - platform: mac-arm
             os: macos-12
             test: 0
@@ -59,6 +64,7 @@ jobs:
             conan_profile: macos-arm
             conan_options: --options with_apple_system_libs=True
             artifact_platform: arm
+            generator: MinGW Makefiles
           - platform: ios
             os: macos-12
             test: 0
@@ -68,6 +74,7 @@ jobs:
             preset: ios-release-conan-ccache
             conan_profile: ios-arm64
             conan_options: --options with_apple_system_libs=True
+            generator: MinGW Makefiles
           - platform: msvc
             os: windows-latest
             test: 0
@@ -75,6 +82,7 @@ jobs:
             pack_type: RelWithDebInfo
             extension: exe
             preset: windows-msvc-release-ccache
+            generator: Visual Studio 17
           - platform: mingw
             os: ubuntu-22.04
             test: 0
@@ -85,6 +93,7 @@ jobs:
             cmake_args: -G Ninja
             preset: windows-mingw-conan-linux
             conan_profile: mingw64-linux.jinja
+            generator: MinGW Makefiles
           - platform: mingw-32
             os: ubuntu-22.04
             test: 0
@@ -95,6 +104,7 @@ jobs:
             cmake_args: -G Ninja
             preset: windows-mingw-conan-linux
             conan_profile: mingw32-linux.jinja
+            generator: MinGW Makefiles
           - platform: android-32
             os: ubuntu-22.04
             extension: apk
@@ -102,6 +112,7 @@ jobs:
             conan_profile: android-32
             conan_options: --conf tools.android:ndk_path=$ANDROID_NDK_ROOT
             artifact_platform: armeabi-v7a
+            generator: Unix Makefiles
           - platform: android-64
             os: ubuntu-22.04
             extension: apk
@@ -109,6 +120,7 @@ jobs:
             conan_profile: android-64
             conan_options: --conf tools.android:ndk_path=$ANDROID_NDK_ROOT
             artifact_platform: arm64-v8a
+            generator: Unix Makefiles
 
     runs-on: ${{ matrix.os }}
 
