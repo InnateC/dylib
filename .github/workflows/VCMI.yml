@@ -83,7 +83,7 @@ jobs:
             extension: exe
             preset: windows-msvc-release-ccache
           - platform: mingw
-            generator: MinGW Makefiles
+            generator: Unix Makefiles
             os: ubuntu-22.04
             test: 0
             pack: 1
@@ -94,7 +94,7 @@ jobs:
             preset: windows-mingw-conan-linux
             conan_profile: mingw64-linux.jinja
           - platform: mingw-32
-            generator: MinGW Makefiles
+            generator: Unix Makefiles
             os: ubuntu-22.04
             test: 0
             pack: 1
