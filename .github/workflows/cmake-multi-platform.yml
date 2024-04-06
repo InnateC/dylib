@@ -1,4 +1,4 @@
-name: VCMI
+name: CI
 
 on:
   workflow_dispatch:
@@ -111,7 +111,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
       - uses: actions/setup-python@v5
         if: "${{ matrix.conan_profile != '' }}"
