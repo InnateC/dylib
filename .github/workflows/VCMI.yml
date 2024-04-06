@@ -28,21 +28,23 @@ jobs:
       matrix:
         include:
           - platform: linux-qt6
-            generator: [Unix Makefiles, MinGW Makefiles, Visual Studio 17]
+            generator: Unix Makefiles
             os: ubuntu-22.04
             test: 0
             preset: linux-clang-test
           - platform: linux
             os: ubuntu-22.04
+            generator: Unix Makefiles
             test: 1
             preset: linux-gcc-test
           - platform: linux
             os: ubuntu-20.04
+            generator: Unix Makefiles
             test: 0
             preset: linux-gcc-debug
           - platform: mac-intel
             os: macos-12
-            generator: [Unix Makefiles, MinGW Makefiles, Visual Studio 17]
+            generator: Unix Makefiles
             test: 0
             pack: 1
             pack_type: Release
@@ -52,6 +54,7 @@ jobs:
             conan_options: --options with_apple_system_libs=True
             artifact_platform: intel
           - platform: mac-arm
+            generator: Unix Makefiles
             os: macos-12
             test: 0
             pack: 1
@@ -62,6 +65,7 @@ jobs:
             conan_options: --options with_apple_system_libs=True
             artifact_platform: arm
           - platform: ios
+            generator: Unix Makefiles
             os: macos-12
             test: 0
             pack: 1
@@ -71,8 +75,8 @@ jobs:
             conan_profile: ios-arm64
             conan_options: --options with_apple_system_libs=True
           - platform: msvc
+            generator: Visual Studio 17
             os: windows-latest
-            generator: [Unix Makefiles, MinGW Makefiles, Visual Studio 17]
             test: 0
             pack: 1
             pack_type: RelWithDebInfo
@@ -167,7 +171,6 @@ jobs:
         run: |
           if [[ ${{matrix.preset}} == linux-gcc-test ]]; then GCC13=1; fi
           cmake -DENABLE_CCACHE:BOOL=ON --preset ${{ matrix.preset }} ${GCC13:+-DCMAKE_C_COMPILER=gcc-13 -DCMAKE_CXX_COMPILER=g++-13}
-
       # - name: Build
       #   run: |
       #     cmake --build --preset ${{matrix.preset}}
