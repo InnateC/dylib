@@ -122,21 +122,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Conan setup
-        if: "${{ matrix.conan_profile != '' }}"
-        run: |
-          pip3 install 'conan<2.0'
-          conan profile new default --detect
-          conan install . \
-            --install-folder=conan-generated \
-            --no-imports \
-            --build=never \
-            --profile:build=default \
-            --profile:host=CI/conan/${{ matrix.conan_profile }} \
-            ${{ matrix.conan_options }}
-        env:
-          GENERATE_ONLY_BUILT_CONFIG: 1
-
       - name: Dependencies
         run: source '${{github.workspace}}/CI/${{matrix.platform}}/before_install.sh'
         env:
@@ -166,6 +151,26 @@ jobs:
           # actual cache takes up less space, at most ~1 GB
           max-size: "5G"
           verbose: 2
+      
+      - uses: actions/setup-python@v5
+        if: "${{ matrix.conan_profile != '' }}"
+        with:
+          python-version: '3.10'
+
+      - name: Conan setup
+        if: "${{ matrix.conan_profile != '' }}"
+        run: |
+          pip3 install 'conan<2.0'
+          conan profile new default --detect
+          conan install . \
+            --install-folder=conan-generated \
+            --no-imports \
+            --build=never \
+            --profile:build=default \
+            --profile:host=CI/conan/${{ matrix.conan_profile }} \
+            ${{ matrix.conan_options }}
+        env:
+          GENERATE_ONLY_BUILT_CONFIG: 1
 
       - name: Configure
         run: |
