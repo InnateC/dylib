@@ -1,10 +1,12 @@
 name: VCMI
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - .github/workflows/VCMI.yml
       - CMakeLists.txt
+      - CMakePresets.txt
       - include/*
       - tests/*
 
