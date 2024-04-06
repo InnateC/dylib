@@ -1,17 +1,17 @@
-name: CI
+name: cmake-multi-platform
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - .github/workflows/CI.yml
+      - .github/workflows/cmake-multi-platform.yml
       - CMakeLists.txt
       - include/*
       - tests/*
 
   pull_request:
     paths:
-      - .github/workflows/CI.yml
+      - .github/workflows/cmake-multi-platform.yml
       - CMakeLists.txt
       - include/*
       - tests/*
