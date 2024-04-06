@@ -26,9 +26,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        generator: [Unix Makefiles, MinGW Makefiles, Visual Studio 17]
         include:
           - platform: linux-qt6
+            generator: Unix Makefiles
             os: ubuntu-22.04
             test: 0
             preset: linux-clang-test
