@@ -127,6 +127,12 @@ jobs:
             ${{ matrix.conan_options }}
         env:
           GENERATE_ONLY_BUILT_CONFIG: 1
+
+      - name: Dependencies
+        run: source '${{github.workspace}}/CI/${{matrix.platform}}/before_install.sh'
+        env:
+          VCMI_BUILD_PLATFORM: x64
+
       - name: Configure
         run: |
           if [[ ${{matrix.preset}} == linux-gcc-test ]]; then GCC13=1; fi
