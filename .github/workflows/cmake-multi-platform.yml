@@ -1,4 +1,4 @@
-name: CI Cross-platform
+name: VCMI
 
 on:
   workflow_dispatch:
