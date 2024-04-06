@@ -1,75 +1,171 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - .github/workflows/CI.yml
+      - CMakeLists.txt
+      - include/*
+      - tests/*
+
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - .github/workflows/CI.yml
+      - CMakeLists.txt
+      - include/*
+      - tests/*
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build:
+  unit_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-qt6
+            os: ubuntu-22.04
+            test: 0
+            preset: linux-clang-test
+          - platform: linux
+            os: ubuntu-22.04
+            test: 1
+            preset: linux-gcc-test
+          - platform: linux
+            os: ubuntu-20.04
+            test: 0
+            preset: linux-gcc-debug
+          - platform: mac-intel
+            os: macos-12
+            test: 0
+            pack: 1
+            pack_type: Release
+            extension: dmg
+            preset: macos-conan-ninja-release
+            conan_profile: macos-intel
+            conan_options: --options with_apple_system_libs=True
+            artifact_platform: intel
+          - platform: mac-arm
+            os: macos-12
+            test: 0
+            pack: 1
+            pack_type: Release
+            extension: dmg
+            preset: macos-arm-conan-ninja-release
+            conan_profile: macos-arm
+            conan_options: --options with_apple_system_libs=True
+            artifact_platform: arm
+          - platform: ios
+            os: macos-12
+            test: 0
+            pack: 1
+            pack_type: Release
+            extension: ipa
+            preset: ios-release-conan-ccache
+            conan_profile: ios-arm64
+            conan_options: --options with_apple_system_libs=True
+          - platform: msvc
+            os: windows-latest
+            test: 0
+            pack: 1
+            pack_type: RelWithDebInfo
+            extension: exe
+            preset: windows-msvc-release-ccache
+          - platform: mingw
+            os: ubuntu-22.04
+            test: 0
+            pack: 1
+            pack_type: Release
+            extension: exe
+            cpack_args: -D CPACK_NSIS_EXECUTABLE=`which makensis`
+            cmake_args: -G Ninja
+            preset: windows-mingw-conan-linux
+            conan_profile: mingw64-linux.jinja
+          - platform: mingw-32
+            os: ubuntu-22.04
+            test: 0
+            pack: 1
+            pack_type: Release
+            extension: exe
+            cpack_args: -D CPACK_NSIS_EXECUTABLE=`which makensis`
+            cmake_args: -G Ninja
+            preset: windows-mingw-conan-linux
+            conan_profile: mingw32-linux.jinja
+          - platform: android-32
+            os: ubuntu-22.04
+            extension: apk
+            preset: android-conan-ninja-release
+            conan_profile: android-32
+            conan_options: --conf tools.android:ndk_path=$ANDROID_NDK_ROOT
+            artifact_platform: armeabi-v7a
+          - platform: android-64
+            os: ubuntu-22.04
+            extension: apk
+            preset: android-conan-ninja-release
+            conan_profile: android-64
+            conan_options: --conf tools.android:ndk_path=$ANDROID_NDK_ROOT
+            artifact_platform: arm64-v8a
+
+    name: ${{ matrix.os }} (C++${{ matrix.cxx-std }} - ${{ matrix.generator }})
     runs-on: ${{ matrix.os }}
 
-    strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
-      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
 
-      # Set up a matrix to run the following 3 configurations:
-      # 1. <Windows, Release, latest MSVC compiler toolchain on the default runner image, default generator>
-      # 2. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
-      # 3. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
-      #
-      # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        build_type: [Release]
-        c_compiler: [gcc, clang, cl]
-        include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
-            c_compiler: cl
+      - name: Generate project files
+        run: cmake . -B build -G "${{ matrix.generator }}" -DCMAKE_CXX_STANDARD=${{ matrix.cxx-std }} -DDYLIB_BUILD_TESTS=ON -DDYLIB_WARNING_AS_ERRORS=ON
+
+      - name: Build dynamic library and unit tests
+        run: cmake --build build
+
+      - name: Run unit tests
+        working-directory: build
+        run: ctest
+
+      - name: Generate code coverage
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.cxx-std == 20 }}
+        run: gcov -abcfu build/CMakeFiles/unit_tests.dir/tests/tests.cpp.gcda
+
+      - name: Send coverage to codecov.io
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.cxx-std == 20 }}
+        uses: codecov/codecov-action@v3
+        with:
+          files: dylib.hpp.gcov
+
+  memory_check:
+    name: memory check
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+      - name: Update packages
+        run: sudo apt update
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+      - name: Install valgrind
+        run: sudo apt install -y valgrind
 
-    - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      - name: Generate tests build file
+        run: cmake . -B build -DCMAKE_CXX_STANDARD=20 -DDYLIB_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
 
-    - name: Test
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest --build-config ${{ matrix.build_type }}
+      - name: Build unit tests
+        run: cmake --build build
+
+      - name: Run unit tests with valgrind
+        working-directory: build
+        run: valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./unit_tests
+
+  linter:
+    name: linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install cpplint
+        run: pip install cpplint
+
+      - name: Run cpplint
+        run: cpplint --linelength=140 --filter=-whitespace/indent,-whitespace/parens include/dylib.hpp
